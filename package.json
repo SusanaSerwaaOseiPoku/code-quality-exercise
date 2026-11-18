@@ -1,0 +1,15 @@
+{
+  "name": "notes-api-dress-rehearsal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local Notes API and login UI for a class dress rehearsal",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "helmet": "^8.1.0"
+  }
+}

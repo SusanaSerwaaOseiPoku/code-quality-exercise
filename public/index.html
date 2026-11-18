@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Notes API — Dress Rehearsal</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <main class="panel">
+      <header>
+        <p class="eyebrow">MILESTONE 1 · LIVE DEMO</p>
+        <h1>Notes</h1>
+        <p class="subtitle">A small private notebook for your ideas.</p>
+      </header>
+
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+
+      <section id="loginPanel" aria-labelledby="loginTitle">
+        <h2 id="loginTitle">Sign in</h2>
+        <form id="loginForm">
+          <label for="username">Username</label>
+          <input id="username" name="username" autocomplete="username" required>
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required>
+          <button type="submit">Log in</button>
+        </form>
+      </section>
+
+      <section id="notesPanel" aria-labelledby="notesTitle" hidden>
+        <div class="toolbar">
+          <h2 id="notesTitle">Your notes</h2>
+          <span id="accountLabel"></span>
+          <button id="logoutButton" class="secondary" type="button">Log out</button>
+        </div>
+        <form id="noteForm">
+          <label for="noteTitle">Title</label>
+          <input id="noteTitle" name="title" maxlength="120" required>
+          <label for="noteContent">Note</label>
+          <textarea id="noteContent" name="content" maxlength="5000" rows="4"></textarea>
+          <button type="submit">Save note</button>
+        </form>
+        <ul id="noteList" class="note-list"></ul>
+      </section>
+    </main>
+  </body>
+</html>
