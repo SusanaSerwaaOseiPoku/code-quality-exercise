@@ -63,9 +63,17 @@ test("health, authentication, and user-scoped notes work", async () => {
   assert.equal(created.response.status, 201);
   assert.equal(created.payload.title, "Rehearsal note A");
 
+  const createdAtRoot = await request("/notes", {
+    method: "POST",
+    cookie: accountACookie,
+    body: { title: "Root route note", content: "Created through /notes" },
+  });
+  assert.equal(createdAtRoot.response.status, 201);
+  assert.equal(createdAtRoot.payload.title, "Root route note");
+
   const accountAList = await request("/api/notes", { cookie: accountACookie });
   assert.equal(accountAList.response.status, 200);
-  assert.equal(accountAList.payload.length, 1);
+  assert.equal(accountAList.payload.length, 2);
 
   const accountBCookie = await login("demo-b");
   const accountBList = await request("/api/notes", { cookie: accountBCookie });

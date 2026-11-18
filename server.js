@@ -1,5 +1,6 @@
 const crypto = require("node:crypto");
 const path = require("node:path");
+require("dotenv").config({ quiet: true });
 const express = require("express");
 const session = require("express-session");
 const helmet = require("helmet");
@@ -9,7 +10,8 @@ const { createNotesRouter, createNotesStore } = require("./notes");
 const app = express();
 const demoUsers = createDemoUsers();
 const notesStore = createNotesStore();
-const sessionSecret = crypto.randomBytes(32).toString("hex");
+const sessionSecret =
+  process.env.SESSION_SECRET || crypto.randomBytes(32).toString("hex");
 const port = Number(process.env.PORT || 3000);
 
 app.disable("x-powered-by");
@@ -38,7 +40,9 @@ app.use("/api/auth", createAuthRouter(demoUsers));
 app.get("/api/me", requireAuth, (req, res) => {
   res.json({ id: req.session.user.id, username: req.session.user.username });
 });
-app.use("/api/notes", createNotesRouter(requireAuth, notesStore));
+const notesRouter = createNotesRouter(requireAuth, notesStore);
+app.use("/api/notes", notesRouter);
+app.use("/notes", notesRouter);
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use((error, _req, res, _next) => {

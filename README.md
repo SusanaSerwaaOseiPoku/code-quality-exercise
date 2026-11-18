@@ -1,77 +1,111 @@
-# Notes API — Dress Rehearsal
+# Notes API
 
-This folder now contains a runnable local Notes demo. It is **not deployed to the internet**. The previously supplied MockAPI URL only exposed `/notes` (empty list) and returned 404 for `/health`; it has no Notes login page.
+## Five answers for a new reader
 
-## 1. Run the smoke test
+1. **What is this?** A small Express Notes API with a browser client for a class exercise.
+2. **What can I do with it?** Sign in, create notes, list them, edit them, and delete them.
+3. **Who can see a note?** Only the account that created it. The API requires a session for note routes and scopes each operation to that session's user.
+4. **Where can I try it?** Run the local app using the steps below. The full browser app is not publicly deployed.
+5. **What should I know before using it?** Accounts and notes are in memory and disappear when the server restarts. This is a classroom demo, not a production service.
 
-From this folder:
+## Links and live status
 
-```powershell
-npm install
-npm start
+- GitHub project repository: https://github.com/SusanaSerwaaOseiPoku/dress-rehearsal
+- Provided live MockAPI notes endpoint: https://6afd83802a9c141d36b89d75.mockapi.io/notes (`GET` was checked and returned `200` with `[]`).
+- Provided MockAPI health endpoint: https://6afd83802a9c141d36b89d75.mockapi.io/health (checked and returned `404`; this is not a health endpoint for this Express app).
+- Live browser site: **Not deployed.** The app link below is local only.
+
+The MockAPI URL is a separate service from this project. The local Express app exposes both `/notes` and `/api/notes` for note operations; its client uses `/api/notes`.
+
+## Numbered setup: server
+
+1. Install Node.js 20 or newer.
+2. Clone this repository and open a terminal in the project root.
+3. Install dependencies:
+
+   ```powershell
+   npm ci
+   ```
+
+4. Create a private local environment file from the server example:
+
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+
+   Replace the sample `SESSION_SECRET` with a private random value of at least 32 characters. Never commit `.env`.
+
+5. Start the server:
+
+   ```powershell
+   npm start
+   ```
+
+6. Confirm `http://localhost:3000/health` returns `{"status":"ok"}`. The terminal prints temporary demo account credentials; use them only locally.
+
+## Numbered setup: client
+
+1. The browser client is the static files in `public/`; there is no separate client server or build step.
+2. Keep the Express server running. It serves the client and API from the same origin.
+3. Open `http://localhost:3000` and sign in with one of the temporary credentials printed by the server.
+4. The client calls relative `/api/...` paths, so it does not need a separate API URL or any client-side secrets. `public/.env.example` documents this intentionally empty configuration.
+
+## Endpoint table
+
+| Method | Path | Who | Result |
+| --- | --- | --- | --- |
+| `GET` | `/health` | Anyone | `200` and `{"status":"ok"}` |
+| `POST` | `/api/auth/login` | Anyone | `200` and a session cookie; `400` for missing fields or `401` for invalid credentials |
+| `POST` | `/api/auth/logout` | Anyone | `204`; destroys the current session when present |
+| `GET` | `/api/me` | Signed-in user | `200` with the current user, or `401` |
+| `GET` | `/notes` or `/api/notes` | Signed-in user | `200` with only that user's notes, or `401` |
+| `POST` | `/notes` or `/api/notes` | Signed-in user | `201` with the created note; `400` for invalid note fields or `401` |
+| `GET` | `/notes/:id` or `/api/notes/:id` | Signed-in owner | `200` with the note; `404` if it is missing or belongs to another user |
+| `PUT` | `/notes/:id` or `/api/notes/:id` | Signed-in owner | `200` with the updated note; `400` for invalid fields or `404` if unavailable |
+| `DELETE` | `/notes/:id` or `/api/notes/:id` | Signed-in owner | `204`; `404` if unavailable |
+
+Notes require a non-empty title (up to 120 characters) and text content (up to 5000 characters). `/notes` is an alias added for the exercise; the browser client continues to use `/api/notes`.
+
+## Full request and reply: `POST /notes`
+
+First sign in at `POST /api/auth/login` and use the returned session cookie. The cookie value below is a placeholder, not a credential:
+
+```http
+POST /notes HTTP/1.1
+Host: localhost:3000
+Content-Type: application/json
+Cookie: notes.sid=<SESSION_COOKIE_FROM_LOGIN>
+
+{
+  "title": "Week 19 notes",
+  "content": "Review the API request and response."
+}
 ```
 
-Keep the terminal open. It prints two temporary demo usernames and passwords. Open `http://127.0.0.1:3000/health` and confirm `{"status":"ok"}`, then open `http://127.0.0.1:3000` and log in with one of those accounts.
+Example reply (the ID and timestamps are generated at runtime):
 
-**Verified locally:** `/health` returns 200; login works; Account A can create a note; Account B cannot see or fetch Account A's note. `npm test` passes. These checks are local, not a live deployment. A public live-site smoke test still requires deploying this app to a hosting service.
+```http
+HTTP/1.1 201 Created
+Content-Type: application/json
 
-The demo users and notes are in memory. Restarting the server generates new passwords and clears notes.
+{
+  "id": "5e8b3e50-8af7-4ee2-9f4f-2ae435bd14c1",
+  "userId": "demo-a",
+  "title": "Week 19 notes",
+  "content": "Review the API request and response.",
+  "createdAt": "2026-11-18T14:00:00.000Z",
+  "updatedAt": "2026-11-18T14:00:00.000Z"
+}
+```
 
-## 2. Five-minute demo plan
+The example values are fictional. The note is scoped to the signed-in user and is not stored persistently.
 
-| Time | Demo script |
-|---|---|
-| 0:00–0:30 | Introduce Notes: a simple place to create and keep private notes. |
-| 0:30–1:00 | Open `/health`; explain that it confirms the server responds, not that every feature works. |
-| 1:00–2:00 | Log in as Account A, create a rehearsal note, and show it in the list. |
-| 2:00–3:00 | Log out, sign in as Account B, and show that Account A's note is not visible. |
-| 3:00–4:00 | Tour `server.js`, `auth.js`, and `notes.js` using the descriptions in step 4. |
-| 4:00–4:30 | Explain the authorization and user-scoping checks; mention that data resets when the server restarts. |
-| 4:30–5:00 | Summarize the working features, name one next improvement, and invite questions. |
+## Tests
 
-## 3. Test accounts and backup recording
+Run the API integration test from the project root:
 
-- [x] Two local test accounts are generated each time the app starts. Use the `demo-a` and `demo-b` credentials printed in the terminal; they are temporary and must not be shared publicly.
-- [x] Account A / Account B note separation was tested locally.
-- [ ] Record one complete clean run with non-sensitive sample data.
-- [ ] Replay the recording and verify it is readable and plays correctly.
-- [ ] Keep an offline copy here or somewhere accessible: ______________________________
+```powershell
+npm test
+```
 
-Do not save account passwords in this file or include them in the recording.
-
-## 4. Three-file code tour
-
-1. [`server.js`](./server.js) — starts the Express app and wires health, session, authentication, notes, and static-page routes together.
-2. [`auth.js`](./auth.js) — creates temporary demo users, checks login passwords, and provides `requireAuth` to protect note routes.
-3. [`notes.js`](./notes.js) — implements note CRUD and filters every read/write by the signed-in user's ID.
-
-## 5. Partner presentation and feedback
-
-- [ ] Present the five-minute demo while your partner runs a timer.
-- [ ] Partner's **one thing done well:** ___________________________________________
-- [ ] Partner's **one thing to improve:** __________________________________________
-
-## 6. Swap roles, then fix your weakest point
-
-- [ ] Swap roles and time your partner's presentation.
-- [ ] Make one concrete fix based on your own weakest point.
-
-**My weakest point / fix:** ______________________________________________________
-
-## Surprise questions — answer each in under 30 seconds
-
-1. **“What would break if you removed `requireAuth`?”**  
-   “Unauthenticated requests would no longer get the intended 401 response. In this version the handlers would then fail when they try to read the missing session user, and any route without that follow-up check could expose data. The middleware is the consistent gate for all note routes.”
-
-2. **“What does `/health` prove?”**  
-   “It proves the local server answered the health request at that moment. It does not prove login or note operations work, so I test those separately.”
-
-3. **“How do you know one user cannot see another user's notes?”**  
-   “The notes store filters by the authenticated user ID. I tested it by creating a note as Account A, then signing in as Account B: B's list was empty and fetching A's note returned 404.”
-
-## Run it twice
-
-| Pass | Smoke test | Timed demo | Feedback / fix |
-|---|---|---|---|
-| 1 | [ ] | [ ] | ______________________________________________ |
-| 2 | [ ] | [ ] | ______________________________________________ |
+The test checks health, login, unauthenticated access, both note route prefixes, and that one demo account cannot list or fetch another account's notes.
