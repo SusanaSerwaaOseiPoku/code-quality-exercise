@@ -109,3 +109,5 @@ npm test
 ```
 
 The test checks health, login, unauthenticated access, both note route prefixes, and that one demo account cannot list or fetch another account's notes.
+
+**Fresh-clone check:** Commit `7f1fa37` was cloned from GitHub, installed with `npm ci`, configured by copying `.env.example`, and verified with `npm test` (1 passing test), `GET /health` (`200`), and the client page (`200`). `npm audit` reported zero vulnerabilities.
